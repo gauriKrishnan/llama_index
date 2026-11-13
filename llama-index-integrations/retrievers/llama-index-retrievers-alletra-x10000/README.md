@@ -41,3 +41,19 @@ res = chatbot.chat(
 )
 print(res)
 ```
+
+### Filesystem collections
+
+For a collection backed by a filesystem path, pass a file user instead of S3 keys. Each result's metadata has `sourceType: "FILE"` and `filePath` instead of `bucketName`, `objectKey` and `versionId`.
+
+```python
+retriever = AlletraX10000Retriever(
+    uri="https://example.com",
+    collection_name="eng-docs",
+    file_username="bob",
+    file_password="",
+    top_k=5,
+)
+for node in retriever.retrieve("What are we shipping next quarter?"):
+    print(node.score, node.node.metadata["filePath"])
+```
