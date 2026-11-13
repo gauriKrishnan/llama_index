@@ -80,6 +80,40 @@ def test_alletra_x10000_retriever_retrieve(mocker):
     assert result[1].node.metadata["objectKey"] == "value"
 
 
+def test_alletra_x10000_retriever_filesystem_collection(mocker):
+    mock_client = mocker.patch(
+        "llama_index.retrievers.alletra_x10000_retriever.base.DIClient"
+    )
+    file_metadata = {
+        "sourceType": "FILE",
+        "filePath": "/file/fs1/projects/q3-plan.docx",
+        "startCharIdx": 0,
+        "endCharIdx": 7,
+        "pageLabel": "1",
+    }
+    mock_client.return_value.similarity_search.return_value = [
+        {"dataChunk": "q3 plan", "score": 0.7, "chunkMetadata": file_metadata},
+        {"dataChunk": "no metadata", "score": 0.6},
+    ]
+
+    retriever = AlletraX10000Retriever(
+        uri="http://example.com",
+        collection_name="eng-docs",
+        file_username="bob",
+        file_password="pw",
+        top_k=2,
+    )
+    result = retriever._retrieve(QueryBundle(query_str="q"))
+
+    kwargs = mock_client.return_value.similarity_search.call_args.kwargs
+    assert kwargs["file_username"] == "bob"
+    assert kwargs["file_password"] == "pw"
+    assert kwargs["access_key"] is None
+    assert kwargs["secret_key"] is None
+    assert result[0].node.metadata == file_metadata
+    assert result[1].node.metadata == {}
+
+
 def test_alletra_x10000_retriever_retrieve_empty_response(mocker):
     retriever = AlletraX10000Retriever(
         uri="http://example.com",
