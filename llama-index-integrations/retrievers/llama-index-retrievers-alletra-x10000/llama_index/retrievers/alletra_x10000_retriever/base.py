@@ -1,27 +1,37 @@
 # Copyright Hewlett Packard Enterprise Development LP.
 
 from pydi_client import DIClient
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Union
 
 from llama_index.core.retrievers import BaseRetriever
 from llama_index.core.schema import QueryBundle, NodeWithScore, TextNode
 
 
 class AlletraX10000Retriever(BaseRetriever):
+    """Retriever over an AlletraMP X10000 Data Intelligence collection.
+
+    Pass ``s3_access_key``/``s3_secret_key`` for a bucket collection, or
+    ``file_username``/``file_password`` for a filesystem collection.
+    """
+
     def __init__(
         self,
         uri: str,
-        s3_access_key: str,
-        s3_secret_key: str,
         collection_name: str,
+        s3_access_key: Optional[str] = None,
+        s3_secret_key: Optional[str] = None,
         search_config: Union[Any, Dict[str, Any]] = None,
         top_k: int = 5,
+        file_username: Optional[str] = None,
+        file_password: Optional[str] = None,
     ):
         self.uri = uri
         self.top_k = top_k
         self.collection_name = collection_name
         self.access_key = s3_access_key
         self.secret_key = s3_secret_key
+        self.file_username = file_username
+        self.file_password = file_password
         self.search_config = search_config
 
     def _retrieve(self, query_bundle: QueryBundle) -> list[NodeWithScore]:
@@ -34,6 +44,8 @@ class AlletraX10000Retriever(BaseRetriever):
             top_k=self.top_k,
             access_key=self.access_key,
             secret_key=self.secret_key,
+            file_username=self.file_username,
+            file_password=self.file_password,
             search_parameters=self.search_config,
         )
 
@@ -42,7 +54,8 @@ class AlletraX10000Retriever(BaseRetriever):
             nodes.append(
                 NodeWithScore(
                     node=TextNode(
-                        text=item["dataChunk"], metadata=item["chunkMetadata"]
+                        text=item["dataChunk"],
+                        metadata=item.get("chunkMetadata") or {},
                     ),
                     score=item["score"],
                 )
